@@ -1,13 +1,32 @@
 <?php
 	
+	/** 
+	 * Intialize of MachineController to ensure database Connection.
+	 * @param Surname $surname is the Surname of an Employee
+	 * @see Function getCheckedOutMachinesByEmployees($surname) relied on Surname of an Employee
+	 * @param MachineController $machineController is the instances of Machine
+	 * @return type Objects of Machine
+ 	*/
 	$machineController = new MachineController('localhost', 'root', '', 'flexxter');
 	$machineController->getCheckedOutMachinesByEmployees('Sandy');
 
+	/** 
+	 * Create the instances of Machine and Employee Classes
+	 * @param Employee $employee is the instances of Employee
+	 * @param Machine $machine is the instances of Machine
+	 */
+	 
 	$employee = new Employee('1','Sandy','sandy123','sandy125@gmail.com');
 	$machine = new Machine('125','driller','1');
 
-	// $machineController->checkout($employee,$machine);
-	// $machineController->back_to_warehouse();
+	/** 
+	 * Please check Output_Result_Log.pdf file which indicates that
+	 * two fuction can be checked and get the desired output.
+	 * @see Function checkout($employee,$machine) relied on Surname of an Employee
+	 * prints success or error messages.
+ 	*/
+	$machineController->checkout($employee,$machine);
+	$machineController->back_to_warehouse();
 
 class MachineController 
 {
