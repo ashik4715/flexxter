@@ -1,109 +1,84 @@
 <?php
-
-	$servername = "localhost";
-    	$username = "root";
-    	$password = "";
-	$dbname = "flexxter";
 	
-	$conn = new mysqli($servername, $username, $password, $dbname);
-	$machine = new Machine($servername, $username, $password, $dbname);
+	$machineController = new MachineController('localhost', 'root', '', 'flexxter');
+	$machineController->getCheckedOutMachinesByEmployees('Sandy');
 
-	
+	$employee = new Employee('1','Sandy','sandy123','sandy125@gmail.com');
+	$machine = new Machine('125','driller','1');
 
-class Machine 
+	// $machineController->checkout($employee,$machine);
+	// $machineController->back_to_warehouse();
+
+class MachineController 
 {
-	public $servername;
-	public $username;
-	public $password;
-	public $dbname;
-	public $conn;
+	private $conn ="";
 
 	/** 
-	 * Constructor for Machine Class
+	 * Constructor for MachineController Class
  	*/
-	
 	function __construct ($servername, $username, $password, $dbname) 
 	{
-		$servername = "localhost";
-		$username = "root";
-		$password = "";
-		$dbname = "flexxter";
-		$conn = new mysqli($servername, $username, $password, $dbname);
+		$this->conn = new mysqli($servername, $username, $password, $dbname);
 		
-		if ($conn->connect_error) {
-		die("Connection failed: " . $conn->connect_error);
+		if ($this->conn->connect_error) {
+		die("Connection failed: " . $this->conn->connect_error);
 		}else{
-			// echo "Database successfully connected.";
+			echo "Database successfully connected.";
 		}
+	}
 
-		$sql ="SELECT `EmployeeID`, `Surname`, `Password`, `Email` FROM `tblemployees` WHERE `Surname` = 'Sandy'";
+	/**
+	* returns all resources as objects of type Machine that are currently checked out by the employee named 'Sandy'
+	* @param name $name the employee employee named 'Sandy'
+	*/
+	function getCheckedOutMachinesByEmployees($name)
+	{
+		$sql ="SELECT `EmployeeID`, `Surname`, `Password`, `Email` FROM `tblemployees` WHERE `Surname` = '".$name."'";
 
-		$result = $conn->query($sql);
-		$userid = 0;
+		$result = $this->conn->query($sql);
+		$userid;
 
 		if ($result) {
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$userid =  $row["EmployeeID"];
-				printf ("%s (%s) (%s) \n", $row["EmployeeID"], $row["Surname"], $row["Email"]);
+				// printf ("%s (%s) (%s) \n", $row["EmployeeID"], $row["Surname"], $row["Email"]);
 			}
 		}
+		
+		$machines = array();
 		
 		if($userid) {
-		$sql ="SELECT * from `tblmachines` where employeeID= $userid AND borrowed = '1'";
-		$result2 = mysqli_query($conn, $sql);
-		
-		echo "<br>"; 
-		echo "<br>"; 
-		
-		if ($result2) {
-			while ($row = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-				printf ("%s (%s) (%s) (%s) \n", $row["EmployeeID"], $row["MachineID"], $row["Title"] , $row["borrowed"]);
-			}
-		}
+		$sql2 ="SELECT * from `tblmachines` where employeeID= '".$userid."' AND borrowed = '1'";
+		$result2 = mysqli_query($this->conn, $sql2);
 
-		$machines = array();
-			if (mysqli_num_rows($result2) > 0) 
-			{
-				while ($obj = $result2 -> fetch_object()) 
-				{
+			if ($result2 = $this->conn-> query($sql2)) {
+				while ($obj = $result2 -> fetch_object()) {
 					array_push($machines, $obj);
-				}		
-				return $machines;		
-			} else {
-				var_dump($machines);
-			}
-			
+				}
+			}		
 		}
-
+		echo "<br>"; echo "<br>"; var_dump($machines);
+		return $machines;
 	}
-
-	/**
-	* Machine's unique id
-	* @var int $id
-	*/
-
-	public $id;
-
-	/**
-	* Machine's title
-	* @var string $title
-	*/
-
-	public $title;
 
 	/**
 	* assigns the machine to the given employee (checks the machine out)
 	* @param Employee $employee the employee who wants to check out the machine
 	*/
+	
+	/**
+	* assigns the employee to the particular machine.
+	* @param Machine $machine the machine that is assigned to employee
+	*/
 
 	public function checkout(Employee $employee, Machine $machine) : void
 	{
 		$sql = "UPDATE `tblmachines` 
-		SET EmployeeID ='".$employee->$id."', borrowed= 'TRUE'
-		WHERE MachineID='".$machine->$id."';";
+		SET EmployeeID ='".$employee->id."', borrowed= '1'
+		WHERE MachineID='".$machine->id."';";
 
-		if ($conn->query($sql) === TRUE) {
-			echo "Record updated successfully";
+		if ($this->conn->query($sql) === TRUE) {
+			echo "checkout Record updated successfully";
 		} else {
 			echo "Error updating record: " . $conn->error;
 		}   
@@ -115,12 +90,23 @@ class Machine
 	*/
 	public function back_to_warehouse() : void
 	{
-		$sql = "UPDATE `tblmachines` 
-		SET EmployeeID =NULL, borrowed= 'FALSE'
-		WHERE MachineID='".$machine->$id."';";
+		$findMachineQuery ="SELECT * from `tblmachines` where borrowed = '1'";
 
-		if ($conn->query($sql) === TRUE) {
-			echo "Record updated successfully";
+		$findMachineID;
+		$result3 = $this->conn->query($findMachineQuery);
+		if ($result3) {
+			while ($row = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
+				$findMachineID =  $row["MachineID"];
+			}
+		}
+
+		$sql = "UPDATE `tblmachines` 
+		SET EmployeeID =NULL, borrowed= '0'
+		WHERE MachineID='".$findMachineID."';";
+
+		if ($this->conn->query($sql) === TRUE) {
+			echo "<br>";
+			echo "back_to_warehouse Record updated successfully";
 		} else {
 			echo "Error updating record: " . $conn->error;
 		}  
@@ -155,7 +141,42 @@ class Employee
 	*/
 
 	public $password;
+
+	/** 
+	 * Constructor for Employee Class
+ 	*/
+	function __construct($id,$surname,$email,$password)
+	{	
+		$this->id = $id;		
+		$this->surname = $surname;		
+		$this->email = $email;		
+		$this->password = $password;		
+	}
+
 }
 
+class Machine 
+{
+	/**
+	* Machine's unique id
+	* @var int $id
+	*/
+	public $id;
+
+	/**
+	* Machine's title
+	* @var string $title
+	*/
+	public $title;
+
+	/** 
+	 * Constructor for Machine Class
+ 	*/
+	function __construct($id,$title)
+	{	
+		$this->id = $id;		
+		$this->title = $title;				
+	}
+}
 
 ?>
